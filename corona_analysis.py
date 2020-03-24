@@ -1,5 +1,4 @@
 import pandas as pd
-import datadotworld as dw
 
 import requests
 #read flat file form 3/19/2020
@@ -12,7 +11,6 @@ intro_dataset = dw.load_dataset(url)
 #owner is "covid-19-data-resource-hub", id is "covid-19-case-counts"
 
 
-covid-19-data-resource-hub/covid-19-case-counts
 
 
 
