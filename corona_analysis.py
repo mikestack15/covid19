@@ -1,12 +1,10 @@
 import pandas as pd
+from datetime import datetime
 
-import requests
-#read flat file form 3/19/2020
-corona_data = pd.read_csv('COVID-19 Cases.csv')
+today_date = datetime.today().strftime('%m-%d-%Y')
+url = 'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/' + today_date + '.csv'
+covid19_data = pd.read_csv(url)
 
-
-url = 'https://api.data.world/v0/datasets/covid-19-data-resource-hub/covid-19-case-counts'
-intro_dataset = dw.load_dataset(url)
 
 #owner is "covid-19-data-resource-hub", id is "covid-19-case-counts"
 
