@@ -18,11 +18,13 @@ deaths_url = 'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/c
 covid_deaths = pd.read_csv(deaths_url)
 #recovered covid cases/patients
 recovered_url = 'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Recovered.csv'
-
-confirmed_cases_global_url = 'https://github.com/CSSEGISandData/COVID-19/blob/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv'
-
+covid_recovered = pd.read_csv(recovered_url)
+#global confirmed cases
+confirmed_cases_global_url = 'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv'
+covid_global_cases = pd.read_csv(confirmed_cases_global_url)
+#global deaths
 deaths_global_url = 'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv'
-
+covid_global_deaths = pd.read_csv(deaths_global_url)
 
 
 
