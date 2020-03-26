@@ -29,9 +29,9 @@ covid_global_cases = pd.read_csv(confirmed_cases_global_url)
 deaths_global_url = 'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv'
 covid_global_deaths = pd.read_csv(deaths_global_url)
 
-#python virtual environment
-#### in terminal
-#### pipenv --venv
+#### Reformat data
+
+### Aggregations
 
 
 
