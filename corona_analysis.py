@@ -3,55 +3,87 @@ from datetime import datetime
 from datetime import timedelta
 pd.set_option('display.max_columns', None)
 
-#read the most recent data from today (ideal to run in the evening)
+#read the most recent data from today (ideally, evening time for most-oup to date
+# (minus 1 day to allow reports to catch up from previous day)
 
 #calculate today's date minus one (per reporting purposes)
 today = datetime.today()
 today_date = today - timedelta(days =1)
 report_date = today_date.strftime('%m-%d-%Y')
 
-daily_file_url = 'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/' + report_date + '.csv'
+#daily file
+daily_file_data = pd.read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/' + report_date + '.csv')
+
+#times series data
+time_series_deaths = pd.read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv')
+time_series_cases = pd.read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv')
+
+#daily file data reformatting
+#most countries are not reporting to the specific provinence/state/city of case/death origin
+#thus, let's define a function that aggregates 'Country_Region' counts > 1
+country_region_row_count = daily_file_data['Country_Region'].value_counts()
+#country_region_row_count.head(12)
+#country = 'US'
+#country = 'Kuwait'
+granular_country_data = pd.DataFrame()
+generalized_country_data = pd.DataFrame()
+
+def country_aggregator(daily_file_data):
+        for country in daily_file_data['Country_Region'].unique():
+            #filter down to a specifc country_region
+            dat = daily_file_data[daily_file_data['Country_Region'] == country]
+            if len(dat) > 1:
+                #add to granular country dataframe (will be used for later analysis
+                granular_country_data = pd.concat(granular_country_data, dat)
+                #aggregate confirmed cases, deaths, recovered, active
+                country_data = pd.DataFrame({'Country_Region': [country],
+                                'Confirmed': [dat['Confirmed'].sum()],
+                                'Deaths': [dat['Deaths'].sum()],
+                                'Recovered': [dat['Recovered'].sum()],
+                                'Active': [dat['Active'].sum()]})
+                generalized_country_data = pd.concat(generalized_country_data, country_data)
+
+
+            else:
+                generalized_country_data = pd.concat(generalized_country_data, dat[['Country_Region','Confirmed',
+                                                                                    'Deaths','Recovered','Active']])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 covid_data_daily_file = pd.read_csv(daily_file_url)
 
 #select only relevant columns
-covid_data = covid_data_daily_file[['Combined_Key','Confirmed','Deaths','Recovered','Active','Lat',
+covid_data_all = covid_data_daily_file[['Combined_Key','Confirmed','Deaths','Recovered','Active','Lat',
                        'Long_','Country_Region','Province_State']]
 
-us_covid_data_all = covid_data[covid_data['Country_Region'] == 'US']
-
-#handle for rows with unassigned origin locations; capture aggregates in case they want to be used in later
-#analysis
-is_NaN = us_covid_data_all.isnull()
-row_has_NaN = is_NaN.any(axis=1)
-confirmed_cases_unassigned = us_covid_data_all[row_has_NaN]['Confirmed'].sum()
-deaths_unassigned = us_covid_data_all[row_has_NaN]['Deaths'].sum()
-recovered_unassigned = us_covid_data_all[row_has_NaN]['Recovered'].sum()
-
-us_covid_data = us_covid_data_all.dropna(axis=0)
-
-
-
-
-
-#confirmed cases
-confirmed_url = 'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv'
-covid_data_confirmed_cases = pd.read_csv(confirmed_url)
-#covid deaths
-deaths_url = 'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Deaths.csv'
-covid_deaths = pd.read_csv(deaths_url)
-#recovered covid cases/patients
-recovered_url = 'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Recovered.csv'
-covid_recovered = pd.read_csv(recovered_url)
-#global confirmed cases
-confirmed_cases_global_url = 'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv'
-covid_global_cases = pd.read_csv(confirmed_cases_global_url)
-#global deaths
-deaths_global_url = 'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv'
-covid_global_deaths = pd.read_csv(deaths_global_url)
-
-#### Reformat data
-
 ### Aggregations
+
+country_data = covid_data_all.groupby('Country_Region')[['Country_Region','Deaths','Confirmed']]
+
+
+
+
+
+
+#join in population data sets
+
+#join in historical weather data sets
+
+
 
 #Stacked (dual-axis graphs) [cases x deaths, time series]
 #-calculate factor/ratio/rate of delay for cases -> (to) deaths
