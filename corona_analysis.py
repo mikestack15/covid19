@@ -25,32 +25,30 @@ country_region_row_count = daily_file_data['Country_Region'].value_counts()
 #country_region_row_count.head(12)
 #country = 'US'
 #country = 'Kuwait'
-granular_country_data = pd.DataFrame()
-generalized_country_data = pd.DataFrame()
 
-def country_aggregator(daily_file_data):
-        for country in daily_file_data['Country_Region'].unique():
-            #filter down to a specifc country_region
-            dat = daily_file_data[daily_file_data['Country_Region'] == country]
+def country_aggregator(daily_file):
+    granular_country_data = pd.DataFrame(columns=daily_file_data.columns)
+    generalized_country_data = pd.DataFrame(columns=['Country_Region', 'Confirmed', 'Deaths', 'Recovered', 'Active'])
+        for country in daily_file['Country_Region'].unique():
+            #filter down to a specific country_region
+            dat = daily_file[daily_file['Country_Region'] == country]
             if len(dat) > 1:
                 #add to granular country dataframe (will be used for later analysis
-                granular_country_data = pd.concat(granular_country_data, dat)
+                granular_country_data = granular_country_data.append(dat)
                 #aggregate confirmed cases, deaths, recovered, active
                 country_data = pd.DataFrame({'Country_Region': [country],
                                 'Confirmed': [dat['Confirmed'].sum()],
                                 'Deaths': [dat['Deaths'].sum()],
                                 'Recovered': [dat['Recovered'].sum()],
                                 'Active': [dat['Active'].sum()]})
-                generalized_country_data = pd.concat(generalized_country_data, country_data)
-
-
+                generalized_country_data = generalized_country_data.append(country_data)
             else:
-                generalized_country_data = pd.concat(generalized_country_data, dat[['Country_Region','Confirmed',
-                                                                                    'Deaths','Recovered','Active']])
+                generalized_country_data = generalized_country_data.append(dat[['Country_Region','Confirmed',
+                                                                                'Deaths','Recovered','Active']])
+        return generalized_country_data, granular_country_data
 
 
-
-
+country_aggregated_data = country_aggregator(daily_file_data)[1]
 
 
 
