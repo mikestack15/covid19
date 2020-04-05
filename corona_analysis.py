@@ -52,33 +52,7 @@ country_aggregated_data = country_aggregator(daily_file_data)[1]
 
 
 
-
-
-
-
-
-
-
-
-
-
-covid_data_daily_file = pd.read_csv(daily_file_url)
-
-#select only relevant columns
-covid_data_all = covid_data_daily_file[['Combined_Key','Confirmed','Deaths','Recovered','Active','Lat',
-                       'Long_','Country_Region','Province_State']]
-
-### Aggregations
-
-country_data = covid_data_all.groupby('Country_Region')[['Country_Region','Deaths','Confirmed']]
-
-
-
-
-
-
 #join in population data sets
-
 #join in historical weather data sets
 
 
