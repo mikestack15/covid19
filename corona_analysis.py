@@ -29,7 +29,7 @@ country_region_row_count = daily_file_data['Country_Region'].value_counts()
 def country_aggregator(daily_file):
     granular_country_data = pd.DataFrame(columns=daily_file_data.columns)
     generalized_country_data = pd.DataFrame(columns=['Country_Region', 'Confirmed', 'Deaths', 'Recovered', 'Active'])
-        for country in daily_file['Country_Region'].unique():
+    for country in daily_file['Country_Region'].unique():
             #filter down to a specific country_region
             dat = daily_file[daily_file['Country_Region'] == country]
             if len(dat) > 1:
@@ -45,7 +45,7 @@ def country_aggregator(daily_file):
             else:
                 generalized_country_data = generalized_country_data.append(dat[['Country_Region','Confirmed',
                                                                                 'Deaths','Recovered','Active']])
-        return generalized_country_data, granular_country_data
+    return generalized_country_data, granular_country_data
 
 
 country_aggregated_data = country_aggregator(daily_file_data)[1]
