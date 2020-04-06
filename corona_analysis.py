@@ -1,8 +1,6 @@
 import pandas as pd
-from datetime import datetime
-from datetime import timedelta
+from datetime import datetime, timedelta
 pd.set_option('display.max_columns', None)
-
 
 #### Read in data
 #### file processor function can eventually be used to query data from previous daily files
@@ -31,10 +29,10 @@ def country_aggregator(daily_file):
     granular_country_data = pd.DataFrame(columns=daily_file_data.columns)
     generalized_country_data = pd.DataFrame(columns=['Country_Region', 'Confirmed', 'Deaths', 'Recovered', 'Active'])
     for country in daily_file['Country_Region'].unique():
-            #filter down to a specific country_region
+            #filter down to a specific Country_Region
             dat = daily_file[daily_file['Country_Region'] == country]
             if len(dat) > 1:
-                #add to granular country dataframe (will be used for later analysis
+                #add to granular country dataframe (can be used for future analysis)
                 granular_country_data = granular_country_data.append(dat)
                 #aggregate confirmed cases, deaths, recovered, active
                 country_data = pd.DataFrame({'Country_Region': [country],
@@ -49,16 +47,24 @@ def country_aggregator(daily_file):
     return generalized_country_data, granular_country_data
 
 #only grab the cleaned up aggregated file
-country_aggregated_data = country_aggregator(daily_file_data)[1]
+country_aggregated_data = country_aggregator(daily_file_data)[0]
 
 
-#Scraping and joining data
+###Scraping and joining data from the web
 #scrape datasets from the web (population, weather), and join them into our current covid-19 dataset as features
 #join in population data sets
 #join in historical weather data sets
 
 
 
+#
+
+
+
+
+
+
+#####****End product goals/analysis/models/walkthroughs
 #Stacked (dual-axis graphs) [cases x deaths, time series]
 #-calculate factor/ratio/rate of delay for cases -> (to) deaths
 #-python integration
@@ -69,7 +75,7 @@ country_aggregated_data = country_aggregator(daily_file_data)[1]
 #-5 day trailing moving averages
 #-temperature, humidity, UV exposure as a feature?
 #-is active cases mapped across a times series a predictor of future deaths? At what rate?
-
+#looping aggregator function on previous daily files to show expansion of cases/deaths
 
 
 
