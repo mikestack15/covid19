@@ -3,29 +3,30 @@ from datetime import datetime
 from datetime import timedelta
 pd.set_option('display.max_columns', None)
 
-#read the most recent data from today (ideally, evening time for most-oup to date
-# (minus 1 day to allow reports to catch up from previous day)
 
-#calculate today's date minus one (per reporting purposes)
+#### Read in data
+#### file processor function can eventually be used to query data from previous daily files
+####read the most recent data from today (minus 1 day to allow reports to catch up from previous day)
 today = datetime.today()
-today_date = today - timedelta(days =1)
+today_date = today - timedelta(days = 1)
 report_date = today_date.strftime('%m-%d-%Y')
 
-#daily file
+#read in daily file (Johns Hopkins data set)
 daily_file_data = pd.read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/' + report_date + '.csv')
 
-#times series data
+#read in times series data (Johns Hopkins data set)
 time_series_deaths = pd.read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv')
 time_series_cases = pd.read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv')
 
-#daily file data reformatting
+####Clean up data: (daily file data reformatting)
 #most countries are not reporting to the specific provinence/state/city of case/death origin
 #thus, let's define a function that aggregates 'Country_Region' counts > 1
 country_region_row_count = daily_file_data['Country_Region'].value_counts()
 #country_region_row_count.head(12)
+
+#test cases for file aggregator function
 #country = 'US'
 #country = 'Kuwait'
-
 def country_aggregator(daily_file):
     granular_country_data = pd.DataFrame(columns=daily_file_data.columns)
     generalized_country_data = pd.DataFrame(columns=['Country_Region', 'Confirmed', 'Deaths', 'Recovered', 'Active'])
@@ -47,11 +48,12 @@ def country_aggregator(daily_file):
                                                                                 'Deaths','Recovered','Active']])
     return generalized_country_data, granular_country_data
 
-
+#only grab the cleaned up aggregated file
 country_aggregated_data = country_aggregator(daily_file_data)[1]
 
 
-
+#Scraping and joining data
+#scrape datasets from the web (population, weather), and join them into our current covid-19 dataset as features
 #join in population data sets
 #join in historical weather data sets
 
