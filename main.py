@@ -5,21 +5,18 @@ import world_bank_data as wb
 pd.set_option('display.max_columns', None)
 
 #### Read in data
-#### file aggregator function can eventually be used to query data from previous daily files
 ####read the most recent data from today (minus 1 day to allow reports to catch up from previous day)
 today = datetime.today()
 today_date = today - timedelta(days = 1)
 report_date = today_date.strftime('%m-%d-%Y')
-
 #master branch
 master_branch = 'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/'
-
 #read in daily file (Johns Hopkins data set)
 daily_file_data = pd.read_csv(master_branch + 'csse_covid_19_daily_reports/' + report_date + '.csv')
-
 #read in times series data (Johns Hopkins data set)
 time_series_deaths = pd.read_csv(master_branch + 'csse_covid_19_time_series/time_series_covid19_deaths_global.csv')
 time_series_cases = pd.read_csv(master_branch + 'csse_covid_19_time_series/time_series_covid19_confirmed_global.csv')
+
 
 ####Clean up data: (daily file data reformatting)
 #most countries are not reporting to the specific provinence/state/city of case/death origin
@@ -68,6 +65,10 @@ hosp_bed_data = hosp_bed_data.drop_duplicates('Country',keep='last')
 hosp_bed_data = hosp_bed_data.rename(columns={'sh.med.beds.zs':'beds_per_1000_people',
                                               'Year':'MostRecentYearCollected',
                                               'Country':'Country_Region'}).drop(['Series'],axis=1)
+
+
+#extract first reported case date from timeseries file
+
 
 
 dk = pd.merge(country_aggregated_data,pop_data,how='left',on='Country_Region')
