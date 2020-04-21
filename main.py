@@ -2,7 +2,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 import world_bank_data as wb
 
-pd.set_option('display.max_columns', None)
+#pd.set_option('display.max_columns', None)
 
 #### Read in data
 ####read the most recent data from today (minus 1 day to allow reports to catch up from previous day)
@@ -67,7 +67,7 @@ hosp_bed_data = hosp_bed_data.rename(columns={'sh.med.beds.zs':'beds_per_1000_pe
                                               'Country':'Country_Region'}).drop(['Series'],axis=1)
 
 
-#extract first reported case date from timeseries file
+
 
 
 
@@ -78,16 +78,6 @@ pd.merge(country_aggregated_data,hosp_bed_data,how='left',on='Country_Region')
 
 #twitter API?
 #tweepy
-
-
-
-
-#clean up data:
-# delete unnecessary columns
-# remove NA's
-# rename columns
-# join columns to corresponding countries [via fuzzy match])
-
 
 
 
@@ -103,6 +93,23 @@ print(columns_with_nan)
 
 #add calculated columns
 country_aggregated_data['Fatality_Rate'] = country_aggregated_data['Deaths'] / country_aggregated_data['Confirmed']
+
+#extract first reported case date by country from timeseries file
+countries = time_series_cases['Country/Region'].unique()
+column_name_list = time_series_cases.iloc[:,4::].columns
+#country = 'US'
+#first reported case
+
+#country = 'Albania'
+first_case_data = pd.DataFrame(columns=['Country_Region','First_Confirmed_Case'])
+for country in countries:
+    row = time_series_cases[time_series_cases['Country/Region'] == country]
+    row_temp = row.iloc[:,4::] #optimize this to not run every iteration
+    bool_list = (row_temp > 0).any()
+    res = [i for i, val in enumerate(bool_list) if val][0]
+    first_case = column_name_list[res]
+    first_case_country = pd.DataFrame({'Country_Region': [country],'First_Confirmed_Case': [first_case]})
+    first_case_data = first_case_data.append(first_case_country)
 
 
 
