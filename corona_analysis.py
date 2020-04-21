@@ -1,6 +1,5 @@
 import pandas as pd
 from datetime import datetime, timedelta
-import pandas as pd
 import world_bank_data as wb
 import seaborn as sns
 pd.set_option('display.max_columns', None)
@@ -58,12 +57,10 @@ country_aggregated_data = country_aggregator(daily_file_data)[0]
 # and join them into our current covid-19 dataset as features
 
 #join in population data sets (world bank data)
-pop_data = wb.get_series('sp.pop.totl',mrv=1)
-pop_data = pop_data.to_frame().reset_index()
+pop_data = wb.get_series('sp.pop.totl',mrv=1).to_frame().reset_index()
 
 #join in hospital beds per capita data (world bank data)
-hosp_bed_data = wb.get_series('sh.med.beds.zs',mrv=1)
-hosp_bed_data = hosp_bed_data.to_frame().reset_index()
+hosp_bed_data = wb.get_series('sh.med.beds.zs',mrv=1).to_frame().reset_index()
 
 #twitter API?
 #tweepy
