@@ -36,5 +36,5 @@ class StdOutListener(StreamListener):
     def on_error(self,status):
         print(status)
 
-if __name__ == "__main__":
+#if __name__ == "__main__":
 

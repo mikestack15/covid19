@@ -1,66 +1,79 @@
 import pandas as pd
 from datetime import datetime, timedelta
 import world_bank_data as wb
-import seaborn as sns
+
 pd.set_option('display.max_columns', None)
 
 #### Read in data
-#### file processor function can eventually be used to query data from previous daily files
+#### file aggregator function can eventually be used to query data from previous daily files
 ####read the most recent data from today (minus 1 day to allow reports to catch up from previous day)
 today = datetime.today()
 today_date = today - timedelta(days = 1)
 report_date = today_date.strftime('%m-%d-%Y')
 
+#master branch
+master_branch = 'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/'
+
 #read in daily file (Johns Hopkins data set)
-daily_file_data = pd.read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/' + report_date + '.csv')
+daily_file_data = pd.read_csv(master_branch + 'csse_covid_19_daily_reports/' + report_date + '.csv')
 
 #read in times series data (Johns Hopkins data set)
-time_series_deaths = pd.read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv')
-time_series_cases = pd.read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv')
+time_series_deaths = pd.read_csv(master_branch + 'csse_covid_19_time_series/time_series_covid19_deaths_global.csv')
+time_series_cases = pd.read_csv(master_branch + 'csse_covid_19_time_series/time_series_covid19_confirmed_global.csv')
 
 ####Clean up data: (daily file data reformatting)
 #most countries are not reporting to the specific provinence/state/city of case/death origin
-#thus, let's define a function that aggregates 'Country_Region' counts > 1
 country_region_row_count = daily_file_data['Country_Region'].value_counts()
 #country_region_row_count.head(12)
-
-
-def country_aggregator(daily_file):
+#thus, let's define a function that aggregates countries with regions > 1 they are reporting data for
+def file_aggregator(daily_file):
     granular_country_data = pd.DataFrame(columns=daily_file_data.columns)
     generalized_country_data = pd.DataFrame(columns=['Country_Region', 'Confirmed', 'Deaths', 'Recovered', 'Active'])
     for country in daily_file['Country_Region'].unique():
         #filter down to a specific Country_Region
-        dat = daily_file[daily_file['Country_Region'] == country]
-        if len(dat) > 1:
+        country_data = daily_file[daily_file['Country_Region'] == country]
+        if len(country_data) > 1:
             #add to granular country dataframe (can be used for future analysis)
-            granular_country_data = granular_country_data.append(dat)
+            granular_country_data = granular_country_data.append(country_data)
             #aggregate confirmed cases, deaths, recovered, active
             country_data = pd.DataFrame({'Country_Region': [country],
-                                'Confirmed': [dat['Confirmed'].sum()],
-                                'Deaths': [dat['Deaths'].sum()],
-                                'Recovered': [dat['Recovered'].sum()],
-                                'Active': [dat['Active'].sum()]})
+                                'Confirmed': [country_data['Confirmed'].sum()],
+                                'Deaths': [country_data['Deaths'].sum()],
+                                'Recovered': [country_data['Recovered'].sum()],
+                                'Active': [country_data['Active'].sum()]})
             generalized_country_data = generalized_country_data.append(country_data)
         else:
-            generalized_country_data = generalized_country_data.append(dat[['Country_Region','Confirmed',
+            generalized_country_data = generalized_country_data.append(country_data[['Country_Region','Confirmed',
                                                                             'Deaths','Recovered','Active']])
     return generalized_country_data, granular_country_data
 
 #only grab the cleaned up aggregated file
-country_aggregated_data = country_aggregator(daily_file_data)[0]
+country_aggregated_data = file_aggregator(daily_file_data)[0]
+#note, some data can sometimes be added/reported late (i.e. China on 4/16/2020 reporting > 1200 deaths)
 
+###Getting data from API's (world bank API [world_bank_data] & twitter API [tweepy] and joining to COVID data
+#grab datasets from the web (population, hospital beds per 1000 people)
+#and join them into our current covid-19 dataset as features
 
-#note data being added late (China on 4/16/2020 reporting > 1200 deaths)
-
-###Scraping data from API's and joining data from the web
-#scrape datasets from the web (population, hospital beds per capita, climate),
-# and join them into our current covid-19 dataset as features
-
-#join in population data sets (world bank data)
+#fetch population by country data sets (world bank data)
 pop_data = wb.get_series('sp.pop.totl',mrv=1).to_frame().reset_index()
+#rename columns so they can be joined/fuzzy matched to COVID data, delete unnecessary columns
+pop_data = pop_data.rename(columns={'sp.pop.totl':'Population',
+                                    'Country':'Country_Region'}).drop(['Series','Year'], axis=1)
+#fetch hospital beds per capita data (world bank data), remove countries with nan/missing data
+hosp_bed_data = wb.get_series('sh.med.beds.zs').to_frame().reset_index().dropna()
+#keep only the most recent year when this metric was captured (per country)
+hosp_bed_data = hosp_bed_data.drop_duplicates('Country',keep='last')
+#rename columns, drop unnecessary columns
+hosp_bed_data = hosp_bed_data.rename(columns={'sh.med.beds.zs':'beds_per_1000_people',
+                                              'Year':'MostRecentYearCollected',
+                                              'Country':'Country_Region'}).drop(['Series'],axis=1)
 
-#join in hospital beds per capita data (world bank data)
-hosp_bed_data = wb.get_series('sh.med.beds.zs',mrv=1).to_frame().reset_index()
+
+dk = pd.merge(country_aggregated_data,pop_data,how='left',on='Country_Region')
+
+
+pd.merge(country_aggregated_data,hosp_bed_data,how='left',on='Country_Region')
 
 #twitter API?
 #tweepy
@@ -73,8 +86,6 @@ hosp_bed_data = wb.get_series('sh.med.beds.zs',mrv=1).to_frame().reset_index()
 # remove NA's
 # rename columns
 # join columns to corresponding countries [via fuzzy match])
-
-
 
 
 
