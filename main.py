@@ -97,18 +97,15 @@ country_aggregated_data['Fatality_Rate'] = country_aggregated_data['Deaths'] / c
 #extract first reported case date by country from timeseries file
 countries = time_series_cases['Country/Region'].unique()
 column_name_list = time_series_cases.iloc[:,4::].columns
-#country = 'US'
-#first reported case
-
-#country = 'Albania'
 first_case_data = pd.DataFrame(columns=['Country_Region','First_Confirmed_Case'])
 for country in countries:
     row = time_series_cases[time_series_cases['Country/Region'] == country]
-    row_temp = row.iloc[:,4::] #optimize this to not run every iteration
-    bool_list = (row_temp > 0).any()
-    res = [i for i, val in enumerate(bool_list) if val][0]
+    row_case_check = row.iloc[:,4::] #optimize this to not run every iteration
+    bool_list = (row_case_check > 0).any()
+    res = list(filter(lambda i: bool_list[i], range(len(bool_list))))[0] #apply function to remove need for loop?
     first_case = column_name_list[res]
-    first_case_country = pd.DataFrame({'Country_Region': [country],'First_Confirmed_Case': [first_case]})
+    first_case_country = pd.DataFrame({'Country_Region': [country],
+                                       'First_Confirmed_Case': [first_case]})
     first_case_data = first_case_data.append(first_case_country)
 
 
