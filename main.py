@@ -1,6 +1,9 @@
 import pandas as pd
 from datetime import datetime, timedelta
 import world_bank_data as wb
+import tweepy
+import fuzzywuzzy as fw
+from sklearn.ensemble import RandomForestRegressor
 
 #pd.set_option('display.max_columns', None)
 
@@ -18,6 +21,9 @@ time_series_deaths = pd.read_csv(master_branch + 'csse_covid_19_time_series/time
 time_series_cases = pd.read_csv(master_branch + 'csse_covid_19_time_series/time_series_covid19_confirmed_global.csv')
 
 
+fw.fuzz
+RandomForestRegressor
+tweepy.Stream
 ####Clean up data: (daily file data reformatting)
 #most countries are not reporting to the specific provinence/state/city of case/death origin
 country_region_row_count = daily_file_data['Country_Region'].value_counts()
@@ -65,30 +71,24 @@ hosp_bed_data = hosp_bed_data.drop_duplicates('Country',keep='last')
 hosp_bed_data = hosp_bed_data.rename(columns={'sh.med.beds.zs':'beds_per_1000_people',
                                               'Year':'MostRecentYearCollected',
                                               'Country':'Country_Region'}).drop(['Series'],axis=1)
+#fuzzy match the
+from fuzzywuzzy import process, fuzz
+
+
+#match country codes from pop data/hospital bed per 1000
+country_covid_pop = pd.merge(country_aggregated_data,pop_data,how='left',on='Country_Region')
+country_covid_hosp_bed = pd.merge(country_aggregated_data,hosp_bed_data,how='left',on='Country_Region')
+
+countries_wo_match = list(country_covid_pop[country_covid_pop.isna().any(axis=1)]['Country_Region'])
 
 
 
 
-
-
-dk = pd.merge(country_aggregated_data,pop_data,how='left',on='Country_Region')
-
-
-pd.merge(country_aggregated_data,hosp_bed_data,how='left',on='Country_Region')
-
-#twitter API?
+#twitter API for importing tweets for sentiment analysis
 #tweepy
 
 
 
-
-
-
-#check for nan's in dataframe columns
-nan_values = country_aggregated_data.isna()
-nan_columns = nan_values.any()
-columns_with_nan = country_aggregated_data.columns[nan_columns].tolist()
-print(columns_with_nan)
 
 
 #add calculated columns
@@ -96,33 +96,28 @@ country_aggregated_data['Fatality_Rate'] = country_aggregated_data['Deaths'] / c
 
 #extract first reported case date by country from timeseries file
 countries = time_series_cases['Country/Region'].unique()
-column_name_list = time_series_cases.iloc[:,4::].columns
+column_name_list = time_series_cases.iloc[:,4::].columns #only want after 5th column (column where dates begin)
 first_case_data = pd.DataFrame(columns=['Country_Region','First_Confirmed_Case'])
 for country in countries:
     row = time_series_cases[time_series_cases['Country/Region'] == country]
-    row_case_check = row.iloc[:,4::] #optimize this to not run every iteration
+    row_case_check = row.iloc[:,4::]
     bool_list = (row_case_check > 0).any()
-    res = list(filter(lambda i: bool_list[i], range(len(bool_list))))[0] #apply function to remove need for loop?
+    res = list(filter(lambda i: bool_list[i], range(len(bool_list))))[0]
     first_case = column_name_list[res]
     first_case_country = pd.DataFrame({'Country_Region': [country],
                                        'First_Confirmed_Case': [first_case]})
     first_case_data = first_case_data.append(first_case_country)
 
 
-
 #####****End product goals/analysis/models/walkthroughs
 #Stacked (dual-axis graphs) [cases x deaths, time series]
-#-calculate factor/ratio/rate of delay for cases -> (to) deaths
-#Geographical map of deaths
-#***write to GCP cloud storage
 #-filter case, deaths, cases to death ratio, per 1M deaths/cases/cases to death ratio
 #-forecast of cases, deaths, and different rate metrics
-#-distance traveled metric, logarithmic easing (rate of decreasing cases, prediction of “Peter out” threshold
+#logarithmic easing (rate of decreasing cases, prediction of “Peter out”/apex threshold
 #-5 day trailing moving averages
 #-temperature, humidity, UV exposure as a feature?
-#-is active cases mapped across a times series a predictor of future deaths? At what rate?
-#looping aggregator function on previous daily files to show expansion of cases/deaths
-#sentiment analysis on public opinion?
+#-are active cases mapped across a times series a predictor of future deaths? At what rate?
+#sentiment analysis on public opinion via twitter
 
 
 
