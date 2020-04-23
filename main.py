@@ -21,9 +21,7 @@ time_series_deaths = pd.read_csv(master_branch + 'csse_covid_19_time_series/time
 time_series_cases = pd.read_csv(master_branch + 'csse_covid_19_time_series/time_series_covid19_confirmed_global.csv')
 
 
-fw.fuzz
-RandomForestRegressor
-tweepy.Stream
+
 ####Clean up data: (daily file data reformatting)
 #most countries are not reporting to the specific provinence/state/city of case/death origin
 country_region_row_count = daily_file_data['Country_Region'].value_counts()
@@ -31,7 +29,8 @@ country_region_row_count = daily_file_data['Country_Region'].value_counts()
 #thus, let's define a function that aggregates countries with regions > 1 they are reporting data for
 def file_aggregator(daily_file):
     granular_country_data = pd.DataFrame(columns=daily_file_data.columns)
-    generalized_country_data = pd.DataFrame(columns=['Country_Region', 'Confirmed', 'Deaths', 'Recovered', 'Active'])
+    generalized_country_data = pd.DataFrame(columns=['Country_Region', 'Confirmed',
+                                                     'Deaths', 'Recovered', 'Active'])
     for country in daily_file['Country_Region'].unique():
         #filter down to a specific Country_Region
         country_data = daily_file[daily_file['Country_Region'] == country]
