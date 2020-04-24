@@ -7,7 +7,7 @@ from sklearn.ensemble import RandomForestRegressor
 
 #pd.set_option('display.max_columns', None)
 
-#### Read in data
+#### Read in COVID-19 data via raw github extracts
 ####read the most recent data from today (minus 1 day to allow reports to catch up from previous day)
 today = datetime.today()
 today_date = today - timedelta(days = 1)
