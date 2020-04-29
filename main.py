@@ -81,10 +81,8 @@ country_covid_hosp_bed = pd.merge(country_aggregated_data,hosp_bed_data,how='lef
 countries_wo_match = list(country_covid_pop[country_covid_pop.isna().any(axis=1)]['Country_Region'])
 
 
+#fuzzy_match
 
-
-#twitter API for importing tweets for sentiment analysis
-#tweepy
 
 
 
