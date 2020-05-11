@@ -1,9 +1,9 @@
 import pandas as pd
 from datetime import datetime, timedelta
 import world_bank_data as wb
-import tweepy
 import fuzzywuzzy as fw
 from sklearn.ensemble import RandomForestRegressor
+from fuzzywuzzy import process, fuzz
 
 #pd.set_option('display.max_columns', None)
 
@@ -13,21 +13,21 @@ today = datetime.today()
 today_date = today - timedelta(days = 1)
 report_date = today_date.strftime('%m-%d-%Y')
 #master branch
-master_branch = 'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/'
+master_repo = 'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/'
 #read in daily file (Johns Hopkins data set)
-daily_file_data = pd.read_csv(master_branch + 'csse_covid_19_daily_reports/' + report_date + '.csv')
+daily_file_data = pd.read_csv(master_repo + 'csse_covid_19_daily_reports/' + report_date + '.csv')
 #read in times series data (Johns Hopkins data set)
-time_series_deaths = pd.read_csv(master_branch + 'csse_covid_19_time_series/time_series_covid19_deaths_global.csv')
-time_series_cases = pd.read_csv(master_branch + 'csse_covid_19_time_series/time_series_covid19_confirmed_global.csv')
+time_series_deaths = pd.read_csv(master_repo + 'csse_covid_19_time_series/time_series_covid19_deaths_global.csv')
+time_series_cases = pd.read_csv(master_repo + 'csse_covid_19_time_series/time_series_covid19_confirmed_global.csv')
 
 
-
+#granular_data_united_states[granular_data_united_states['Country_Region'] == 'US']
 ####Clean up data: (daily file data reformatting)
 #most countries are not reporting to the specific provinence/state/city of case/death origin
 country_region_row_count = daily_file_data['Country_Region'].value_counts()
 #country_region_row_count.head(12)
 #thus, let's define a function that aggregates countries with regions > 1 they are reporting data for
-def file_aggregator(daily_file):
+def file_aggregator(daily_file, country_region=None):
     granular_country_data = pd.DataFrame(columns=daily_file_data.columns)
     generalized_country_data = pd.DataFrame(columns=['Country_Region', 'Confirmed',
                                                      'Deaths', 'Recovered', 'Active'])
@@ -47,16 +47,18 @@ def file_aggregator(daily_file):
         else:
             generalized_country_data = generalized_country_data.append(country_data[['Country_Region','Confirmed',
                                                                             'Deaths','Recovered','Active']])
+    granular_country_data = granular_country_data[granular_country_data['Country_Region'] == country_region]
     return generalized_country_data, granular_country_data
 
 #only grab the cleaned up aggregated file
 country_aggregated_data = file_aggregator(daily_file_data)[0]
+granular_data_united_states = file_aggregator(daily_file_data,country_region='US')[1]
 #note, some data can sometimes be added/reported late (i.e. China on 4/16/2020 reporting > 1200 deaths)
+
 
 ###Getting data from API's (world bank API [world_bank_data] & twitter API [tweepy] and joining to COVID data
 #grab datasets from the web (population, hospital beds per 1000 people)
 #and join them into our current covid-19 dataset as features
-
 #fetch population by country data sets (world bank data)
 pop_data = wb.get_series('sp.pop.totl',mrv=1).to_frame().reset_index()
 #rename columns so they can be joined/fuzzy matched to COVID data, delete unnecessary columns
@@ -70,9 +72,23 @@ hosp_bed_data = hosp_bed_data.drop_duplicates('Country',keep='last')
 hosp_bed_data = hosp_bed_data.rename(columns={'sh.med.beds.zs':'beds_per_1000_people',
                                               'Year':'MostRecentYearCollected',
                                               'Country':'Country_Region'}).drop(['Series'],axis=1)
-#fuzzy match the
-from fuzzywuzzy import process, fuzz
+#fuzzy match the countries?
 
+def match_term(term, list_names, min_score=0):
+    max_score = -1
+    max_name = ""
+    for term2 in list_names:
+        score = fuzz.partial_ratio(term,term2)
+        if (score > min_score) & (score > max_score):
+            max_name = term2
+            max_score = score
+    return (max_name, max_score)
+
+countries_jh = list(country_aggregated_data['Country_Region'])
+countries_wb = list(pop_data['Country_Region'])
+
+for i in countries_jh:
+    print(i, match_term(i, countries_wb, 50))
 
 #match country codes from pop data/hospital bed per 1000
 country_covid_pop = pd.merge(country_aggregated_data,pop_data,how='left',on='Country_Region')
@@ -89,7 +105,16 @@ countries_wo_match = list(country_covid_pop[country_covid_pop.isna().any(axis=1)
 
 
 #add calculated columns
+
+#fatality rate
 country_aggregated_data['Fatality_Rate'] = country_aggregated_data['Deaths'] / country_aggregated_data['Confirmed']
+
+#cases per 1 million citizens
+
+#deaths per 1 million citizens
+
+#import total tests by country (worldometer.com)
+
 
 #extract first reported case date by country from timeseries file
 countries = time_series_cases['Country/Region'].unique()
