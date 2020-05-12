@@ -1,9 +1,7 @@
 import pandas as pd
 from datetime import datetime, timedelta
 import world_bank_data as wb
-import fuzzywuzzy as fw
 from sklearn.ensemble import RandomForestRegressor
-from fuzzywuzzy import process, fuzz
 
 #pd.set_option('display.max_columns', None)
 
@@ -52,7 +50,7 @@ def file_aggregator(daily_file, country_region=None):
 
 #only grab the cleaned up aggregated file
 country_aggregated_data = file_aggregator(daily_file_data)[0]
-granular_data_united_states = file_aggregator(daily_file_data,country_region='US')[1]
+granular_data_united_states = file_aggregator(daily_file_data, country_region='US')[1]
 #note, some data can sometimes be added/reported late (i.e. China on 4/16/2020 reporting > 1200 deaths)
 
 
@@ -69,52 +67,9 @@ hosp_bed_data = wb.get_series('sh.med.beds.zs').to_frame().reset_index().dropna(
 #keep only the most recent year when this metric was captured (per country)
 hosp_bed_data = hosp_bed_data.drop_duplicates('Country',keep='last')
 #rename columns, drop unnecessary columns
-hosp_bed_data = hosp_bed_data.rename(columns={'sh.med.beds.zs':'beds_per_1000_people',
-                                              'Year':'MostRecentYearCollected',
+hosp_bed_data = hosp_bed_data.rename(columns={'sh.med.beds.zs':'hosp_beds_per_1000_people',
+                                              'Year':'MostRecentYearHospBedInfoCollected',
                                               'Country':'Country_Region'}).drop(['Series'],axis=1)
-#fuzzy match the countries?
-
-def match_term(term, list_names, min_score=0):
-    max_score = -1
-    max_name = ""
-    for term2 in list_names:
-        score = fuzz.partial_ratio(term,term2)
-        if (score > min_score) & (score > max_score):
-            max_name = term2
-            max_score = score
-    return (max_name, max_score)
-
-countries_jh = list(country_aggregated_data['Country_Region'])
-countries_wb = list(pop_data['Country_Region'])
-
-for i in countries_jh:
-    print(i, match_term(i, countries_wb, 50))
-
-#match country codes from pop data/hospital bed per 1000
-country_covid_pop = pd.merge(country_aggregated_data,pop_data,how='left',on='Country_Region')
-country_covid_hosp_bed = pd.merge(country_aggregated_data,hosp_bed_data,how='left',on='Country_Region')
-
-countries_wo_match = list(country_covid_pop[country_covid_pop.isna().any(axis=1)]['Country_Region'])
-
-
-#fuzzy_match
-
-
-
-
-
-
-#add calculated columns
-
-#fatality rate
-country_aggregated_data['Fatality_Rate'] = country_aggregated_data['Deaths'] / country_aggregated_data['Confirmed']
-
-#cases per 1 million citizens
-
-#deaths per 1 million citizens
-
-#import total tests by country (worldometer.com)
-
 
 #extract first reported case date by country from timeseries file
 countries = time_series_cases['Country/Region'].unique()
@@ -130,16 +85,49 @@ for country in countries:
                                        'First_Confirmed_Case': [first_case]})
     first_case_data = first_case_data.append(first_case_country)
 
+country_aggregated_data = pd.merge(country_aggregated_data,first_case_data,how='left',on='Country_Region')
 
-#####****End product goals/analysis/models/walkthroughs
-#Stacked (dual-axis graphs) [cases x deaths, time series]
-#-filter case, deaths, cases to death ratio, per 1M deaths/cases/cases to death ratio
-#-forecast of cases, deaths, and different rate metrics
-#logarithmic easing (rate of decreasing cases, prediction of “Peter out”/apex threshold
-#-5 day trailing moving averages
-#-temperature, humidity, UV exposure as a feature?
-#-are active cases mapped across a times series a predictor of future deaths? At what rate?
-#sentiment analysis on public opinion via twitter
+#match country codes from pop data/hospital bed per 1000
+#tables with keys aligned properly
+Country_Region_Key_WB_Pop = pd.read_csv('Country_Region_Key_Table_WB_Pop.csv')
+Country_Region_Key_WB_Hosp_Bed = pd.read_csv('Country_Region_Key_Table_WB_Hosp_Bed.csv')
+
+#join to pop data and hosp_bed country_region key dataframes
+country_aggregated_data = pd.merge(country_aggregated_data,Country_Region_Key_WB_Pop, how='left', on='Country_Region')
+country_aggregated_data = pd.merge(country_aggregated_data,Country_Region_Key_WB_Hosp_Bed, how='left', on='Country_Region')
+
+#rename columns
+pop_data = pop_data.rename(columns={"Country_Region":"wb_pop_Country_Region"})
+hosp_bed_data = hosp_bed_data.rename(columns={"Country_Region":"wb_hosp_bed_Country_Region"})
+
+#merge pop/hosp bed data
+country_aggregated_data = pd.merge(country_aggregated_data,pop_data,how='left',on='wb_pop_Country_Region')
+country_aggregated_data = pd.merge(country_aggregated_data,hosp_bed_data,how='left',on='wb_hosp_bed_Country_Region')
+
+#drop countries with no data/match found
+country_aggregated_data = country_aggregated_data.dropna()
+country_aggregated_data = country_aggregated_data.drop(['wb_pop_Country_Region','wb_hosp_bed_Country_Region'],axis=1)
+
+
+#add calculated columns
+#fatality rate
+country_aggregated_data['Fatality_Rate'] = country_aggregated_data['Deaths'] / country_aggregated_data['Confirmed']
+#per one million ratio [population / 1000000]
+per_Mil_ratio = country_aggregated_data['Population'] / 1000000
+#cases per 1 million people
+country_aggregated_data['cases_per_mil_people'] = country_aggregated_data['Confirmed'] / per_Mil_ratio
+#deaths per 1 million citizens
+country_aggregated_data['deaths_per_mil_people'] = country_aggregated_data['Deaths'] / per_Mil_ratio
+
+#import total tests by country (worldometer.com)
+#tests per 1 million citizens
+
+
+#time series dataframe transformations
+
+
+
+#forecast total
 
 
 
