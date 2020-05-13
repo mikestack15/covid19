@@ -1,0 +1,65 @@
+,Country_Region,Date,Cases,Value_Type
+0,US,3/24/20,53736,Actual Value
+1,US,3/25/20,65778,Actual Value
+2,US,3/26/20,83836,Actual Value
+3,US,3/27/20,101657,Actual Value
+4,US,3/28/20,121465,Actual Value
+5,US,3/29/20,140909,Actual Value
+6,US,3/30/20,161831,Actual Value
+7,US,3/31/20,188172,Actual Value
+8,US,4/1/20,213242,Actual Value
+9,US,4/2/20,243622,Actual Value
+10,US,4/3/20,275367,Actual Value
+11,US,4/4/20,308650,Actual Value
+12,US,4/5/20,336802,Actual Value
+13,US,4/6/20,366317,Actual Value
+14,US,4/7/20,397121,Actual Value
+15,US,4/8/20,428654,Actual Value
+16,US,4/9/20,462780,Actual Value
+17,US,4/10/20,496535,Actual Value
+18,US,4/11/20,526396,Actual Value
+19,US,4/12/20,555313,Actual Value
+20,US,4/13/20,580619,Actual Value
+21,US,4/14/20,607670,Actual Value
+22,US,4/15/20,636350,Actual Value
+23,US,4/16/20,667592,Actual Value
+24,US,4/17/20,699706,Actual Value
+25,US,4/18/20,732197,Actual Value
+26,US,4/19/20,758809,Actual Value
+27,US,4/20/20,784326,Actual Value
+28,US,4/21/20,811865,Actual Value
+29,US,4/22/20,840351,Actual Value
+30,US,4/23/20,869170,Actual Value
+31,US,4/24/20,905358,Actual Value
+32,US,4/25/20,938154,Actual Value
+33,US,4/26/20,965785,Actual Value
+34,US,4/27/20,988197,Actual Value
+35,US,4/28/20,1012582,Actual Value
+36,US,4/29/20,1039909,Actual Value
+37,US,4/30/20,1069424,Actual Value
+38,US,5/1/20,1103461,Actual Value
+39,US,5/2/20,1132539,Actual Value
+40,US,5/3/20,1158040,Actual Value
+41,US,5/4/20,1180375,Actual Value
+42,US,5/5/20,1204351,Actual Value
+43,US,5/6/20,1229331,Actual Value
+44,US,5/7/20,1257023,Actual Value
+45,US,5/8/20,1283929,Actual Value
+46,US,5/9/20,1309550,Actual Value
+47,US,5/10/20,1329260,Actual Value
+48,US,5/11/20,1347881,Actual Value
+49,US,5/12/20,1369376,Actual Value
+50,US,2020-05-12 00:00:00,[1387403.27725961],Forecasted Value
+51,US,2020-05-13 00:00:00,[1406411.32747924],Forecasted Value
+52,US,2020-05-14 00:00:00,[1424565.19873762],Forecasted Value
+53,US,2020-05-15 00:00:00,[1441833.86971414],Forecasted Value
+54,US,2020-05-16 00:00:00,[1458186.31908818],Forecasted Value
+55,US,2020-05-17 00:00:00,[1473591.52553911],Forecasted Value
+56,US,2020-05-18 00:00:00,[1488018.46774633],Forecasted Value
+57,US,2020-05-19 00:00:00,[1501436.1243892],Forecasted Value
+58,US,2020-05-20 00:00:00,[1513813.47414711],Forecasted Value
+59,US,2020-05-21 00:00:00,[1525119.49569944],Forecasted Value
+60,US,2020-05-22 00:00:00,[1535323.16772557],Forecasted Value
+61,US,2020-05-23 00:00:00,[1544393.46890488],Forecasted Value
+62,US,2020-05-24 00:00:00,[1552299.37791675],Forecasted Value
+63,US,2020-05-25 00:00:00,[1559009.87344056],Forecasted Value

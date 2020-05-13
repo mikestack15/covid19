@@ -1,7 +1,9 @@
 import pandas as pd
 from datetime import datetime, timedelta
 import world_bank_data as wb
-from sklearn.ensemble import RandomForestRegressor
+import numpy as np
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import PolynomialFeatures
 
 #pd.set_option('display.max_columns', None)
 
@@ -85,12 +87,14 @@ for country in countries:
                                        'First_Confirmed_Case': [first_case]})
     first_case_data = first_case_data.append(first_case_country)
 
+#merge first reported case
 country_aggregated_data = pd.merge(country_aggregated_data,first_case_data,how='left',on='Country_Region')
 
 #match country codes from pop data/hospital bed per 1000
 #tables with keys aligned properly
 Country_Region_Key_WB_Pop = pd.read_csv('Country_Region_Key_Table_WB_Pop.csv')
 Country_Region_Key_WB_Hosp_Bed = pd.read_csv('Country_Region_Key_Table_WB_Hosp_Bed.csv')
+Continent_Mapping_Key = pd.read_csv('Continent_Mapping.csv')
 
 #join to pop data and hosp_bed country_region key dataframes
 country_aggregated_data = pd.merge(country_aggregated_data,Country_Region_Key_WB_Pop, how='left', on='Country_Region')
@@ -104,10 +108,13 @@ hosp_bed_data = hosp_bed_data.rename(columns={"Country_Region":"wb_hosp_bed_Coun
 country_aggregated_data = pd.merge(country_aggregated_data,pop_data,how='left',on='wb_pop_Country_Region')
 country_aggregated_data = pd.merge(country_aggregated_data,hosp_bed_data,how='left',on='wb_hosp_bed_Country_Region')
 
+#merge continent (used for as zoom-in dashboard filter)
+country_aggregated_data = pd.merge(country_aggregated_data,Continent_Mapping_Key,how='left', on='Country_Region')
+
+
 #drop countries with no data/match found
 country_aggregated_data = country_aggregated_data.dropna()
 country_aggregated_data = country_aggregated_data.drop(['wb_pop_Country_Region','wb_hosp_bed_Country_Region'],axis=1)
-
 
 #add calculated columns
 #fatality rate
@@ -119,15 +126,144 @@ country_aggregated_data['cases_per_mil_people'] = country_aggregated_data['Confi
 #deaths per 1 million citizens
 country_aggregated_data['deaths_per_mil_people'] = country_aggregated_data['Deaths'] / per_Mil_ratio
 
+#recovery rate
+country_aggregated_data['Recovery_Rate'] = country_aggregated_data['Recovered'] / country_aggregated_data['Confirmed']
+
+
 #import total tests by country (worldometer.com)
 #tests per 1 million citizens
 
 
 #time series dataframe transformations
 
+time_series_cases = time_series_cases.rename(columns = {'Country/Region':'Country_Region'})
+
+pop_data_key = country_aggregated_data[['Country_Region','Population']]
+time_series_cases = pd.merge(time_series_cases,country_aggregated_data[['Country_Region','Population']],
+                             on='Country_Region',how='left')
+
+countries = time_series_cases['Country_Region'].unique()
+def cases_time_series_aggregator(days = 50):
+    case_surge_data = pd.DataFrame(columns=['Country_Region', 'Date', 'Cases', 'Cases_per_Million', 'case_delta_days',
+                                            'case_percentage_x_days_increase'])
+    for country in countries:
+        country_data = time_series_cases[time_series_cases['Country_Region'] == country]
+        country_population = country_data.iloc[:,-1]
+        country_population = country_population.iloc[0]
+        country_data = country_data.drop(['Population'],axis=1)
+        if len(country_data) > 1:
+            Cases = country_data[country_data.columns[-days:]].sum()
+            Dates = country_data[country_data.columns[-days:]].columns
+            country_ts_data = pd.DataFrame({'Date':Dates,'Cases':Cases})
+        else:
+            country_ts_data = country_data[country_data.columns[-days:]].transpose().reset_index()
+            country_ts_data.columns = ['Date','Cases']
+        country_ts_data['Cases_per_Million'] = country_ts_data['Cases'] / (country_population / 1000000)
+        case_delta_days = country_ts_data['Cases'].iloc[-1] - country_ts_data['Cases'].iloc[0]
+        if country_ts_data['Cases'].iloc[0] < 1:
+            case_percentage_x_days_increase = country_ts_data['Cases'].iloc[-1]
+        else:
+            case_percentage_x_days_increase = (country_ts_data['Cases'].iloc[-1] - country_ts_data['Cases'].iloc[0]) / \
+                                       country_ts_data['Cases'].iloc[0]
+        country_case_surge_data = pd.DataFrame({'Country_Region': country,
+                                    'Date': country_ts_data['Date'],
+                                    'Cases': country_ts_data['Cases'],
+                                    'Cases_per_Million': country_ts_data['Cases_per_Million'],
+                                    'case_delta_days': case_delta_days,
+                                    'case_percentage_x_days_increase': case_percentage_x_days_increase})
+        case_surge_data = case_surge_data.append(country_case_surge_data)
+    return case_surge_data
+
+#last 14 day surge data
+case_surge_time_series_data = cases_time_series_aggregator(days=14)
 
 
-#forecast total
+
+#forecast total cases
+case_surge_time_series_data_rf = cases_time_series_aggregator(days=50)
+case_surge_time_series_data_rf = case_surge_time_series_data_rf[['Country_Region','Date','Cases']]
+case_surge_time_series_data_rf['Value_Type'] = 'Actual Value'
+countries = case_surge_time_series_data_rf['Country_Region'].unique()
+
+
+#country = 'US'
+def forecast_by_country(forecast_days=14):
+    full_ts_data = pd.DataFrame(columns=['Country_Region', 'Date', 'Cases', 'Value_Type'])
+    for country in countries:
+        country_ts_data = case_surge_time_series_data_rf[case_surge_time_series_data_rf['Country_Region']==country]
+        #numeric value for date (range of last x days), array formats for both dates and cases
+        dates = np.array(range(0, len(country_ts_data['Date'])))
+        forecast_dates = np.array(range(len(dates),len(dates) + forecast_days))
+        cases = np.array(country_ts_data['Cases'])
+        #reformat axis and array format for model fitting
+        dates = dates[:, np.newaxis]
+        cases = cases[:, np.newaxis]
+        forecast_dates = forecast_dates[:, np.newaxis]
+        dates = dates.reshape(-1,1)
+        forecast_dates = forecast_dates.reshape(-1,1)
+        # Fitting Polynomial Regression to the dataset
+        poly_reg = PolynomialFeatures(degree=3)
+        X_poly = poly_reg.fit_transform(dates)
+        pol_reg = LinearRegression()
+        pol_reg.fit(X_poly, cases)
+        #forecast values with fitted polynomial model
+        country_forecasted_values = pol_reg.predict(poly_reg.fit_transform(forecast_dates)).tolist()
+        country_forecasted_values = [item[0] for item in country_forecasted_values]
+        last_collected_date_value = country_ts_data['Date'].tail(1).iloc[0]
+        actual_forecast_dates = pd.date_range(start=last_collected_date_value,periods=len(forecast_dates))
+        #create forecast output dataframe
+        forecast_output = pd.DataFrame({'Date':actual_forecast_dates,
+                                        'Cases':country_forecasted_values},
+                                       columns=['Date','Cases'])
+        forecast_output['Country_Region'] = country
+        forecast_output['Value_Type'] = 'Forecasted Value'
+        forecast_output = forecast_output[['Country_Region','Date','Cases','Value_Type']]
+        #combine actual data with forecasted values for visualization down the pipeline
+        full_country_ts_data = pd.concat([country_ts_data,forecast_output],ignore_index=True)
+        full_ts_data = full_ts_data.append(full_country_ts_data)
+    return full_ts_data
+
+forecasted_cases = forecast_by_country(forecast_days=14)
+
+
+forecasted_cases.to_csv('forecasted_cases.csv')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
