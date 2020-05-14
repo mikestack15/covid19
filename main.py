@@ -144,12 +144,11 @@ time_series_cases = pd.merge(time_series_cases,country_aggregated_data[['Country
 
 countries = time_series_cases['Country_Region'].unique()
 def cases_time_series_aggregator(days = 50):
-    case_surge_data = pd.DataFrame(columns=['Country_Region', 'Date', 'Cases', 'Cases_per_Million', 'case_delta_days',
-                                            'case_percentage_x_days_increase'])
+    case_surge_data = pd.DataFrame(columns=['Country_Region', 'Date', 'Cases', 'Cases_per_Million',
+                                            'case_delta_days','case_percentage_x_days_increase'])
     for country in countries:
         country_data = time_series_cases[time_series_cases['Country_Region'] == country]
-        country_population = country_data.iloc[:,-1]
-        country_population = country_population.iloc[0]
+        country_population = country_data.iloc[:,-1].iloc[0]
         country_data = country_data.drop(['Population'],axis=1)
         if len(country_data) > 1:
             Cases = country_data[country_data.columns[-days:]].sum()
@@ -202,21 +201,22 @@ def forecast_by_country(forecast_days=14):
         dates = dates.reshape(-1,1)
         forecast_dates = forecast_dates.reshape(-1,1)
         # Fitting Polynomial Regression to the dataset
-        poly_reg = PolynomialFeatures(degree=3)
+        poly_reg = PolynomialFeatures(degree=2)
         X_poly = poly_reg.fit_transform(dates)
         pol_reg = LinearRegression()
         pol_reg.fit(X_poly, cases)
         #forecast values with fitted polynomial model
-        country_forecasted_values = pol_reg.predict(poly_reg.fit_transform(forecast_dates)).tolist()
-        country_forecasted_values = [item[0] for item in country_forecasted_values]
-        last_collected_date_value = country_ts_data['Date'].tail(1).iloc[0]
+        country_forecast_values = pol_reg.predict(poly_reg.fit_transform(forecast_dates)).tolist()
+        country_forecast_values = [item[0] for item in country_forecast_values]
+        last_collected_date_value = datetime.strptime(country_ts_data['Date'].tail(1).iloc[0] , '%m/%d/%y') \
+                                    + timedelta(days=1)
         actual_forecast_dates = pd.date_range(start=last_collected_date_value,periods=len(forecast_dates))
         #create forecast output dataframe
         forecast_output = pd.DataFrame({'Date':actual_forecast_dates,
-                                        'Cases':country_forecasted_values},
+                                        'Cases':country_forecast_values},
                                        columns=['Date','Cases'])
         forecast_output['Country_Region'] = country
-        forecast_output['Value_Type'] = 'Forecasted Value'
+        forecast_output['Value_Type'] = 'Forecast Value'
         forecast_output = forecast_output[['Country_Region','Date','Cases','Value_Type']]
         #combine actual data with forecasted values for visualization down the pipeline
         full_country_ts_data = pd.concat([country_ts_data,forecast_output],ignore_index=True)
@@ -226,8 +226,7 @@ def forecast_by_country(forecast_days=14):
 forecasted_cases = forecast_by_country(forecast_days=14)
 
 
-forecasted_cases.to_csv('forecasted_cases.csv')
-
+#forecasted_cases.to_csv('forecasted_cases.csv')
 
 
 
