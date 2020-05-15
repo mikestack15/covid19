@@ -1,10 +1,15 @@
+#Author: Mike Stack
+#Last Updated: 5/14/2020
+#this script ingests all of the data sources (*twitter data still needs to be added to process), performs necessary
+#transformations, and produces a 2nd degree polynomial forecast model for predicting the next 14 days of cases.
+#The data is then outputed as objects onto GCP storage (BigQuery) and read into corresponding visualization suites
+
 import pandas as pd
 from datetime import datetime, timedelta
 import world_bank_data as wb
 import numpy as np
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
-
 #pd.set_option('display.max_columns', None)
 
 #### Read in COVID-19 data via raw github extracts
@@ -20,14 +25,13 @@ daily_file_data = pd.read_csv(master_repo + 'csse_covid_19_daily_reports/' + rep
 time_series_deaths = pd.read_csv(master_repo + 'csse_covid_19_time_series/time_series_covid19_deaths_global.csv')
 time_series_cases = pd.read_csv(master_repo + 'csse_covid_19_time_series/time_series_covid19_confirmed_global.csv')
 
-
 #granular_data_united_states[granular_data_united_states['Country_Region'] == 'US']
 ####Clean up data: (daily file data reformatting)
 #most countries are not reporting to the specific provinence/state/city of case/death origin
 country_region_row_count = daily_file_data['Country_Region'].value_counts()
 #country_region_row_count.head(12)
 #thus, let's define a function that aggregates countries with regions > 1 they are reporting data for
-def file_aggregator(daily_file, country_region=None):
+def daily_file_aggregator(daily_file, country_region=None):
     granular_country_data = pd.DataFrame(columns=daily_file_data.columns)
     generalized_country_data = pd.DataFrame(columns=['Country_Region', 'Confirmed',
                                                      'Deaths', 'Recovered', 'Active'])
@@ -51,8 +55,8 @@ def file_aggregator(daily_file, country_region=None):
     return generalized_country_data, granular_country_data
 
 #only grab the cleaned up aggregated file
-country_aggregated_data = file_aggregator(daily_file_data)[0]
-granular_data_united_states = file_aggregator(daily_file_data, country_region='US')[1]
+country_aggregated_data = daily_file_aggregator(daily_file_data)[0]
+granular_data_united_states = daily_file_aggregator(daily_file_data, country_region='US')[1]
 #note, some data can sometimes be added/reported late (i.e. China on 4/16/2020 reporting > 1200 deaths)
 
 
@@ -103,15 +107,11 @@ country_aggregated_data = pd.merge(country_aggregated_data,Country_Region_Key_WB
 #rename columns
 pop_data = pop_data.rename(columns={"Country_Region":"wb_pop_Country_Region"})
 hosp_bed_data = hosp_bed_data.rename(columns={"Country_Region":"wb_hosp_bed_Country_Region"})
-
 #merge pop/hosp bed data
 country_aggregated_data = pd.merge(country_aggregated_data,pop_data,how='left',on='wb_pop_Country_Region')
 country_aggregated_data = pd.merge(country_aggregated_data,hosp_bed_data,how='left',on='wb_hosp_bed_Country_Region')
-
 #merge continent (used for as zoom-in dashboard filter)
 country_aggregated_data = pd.merge(country_aggregated_data,Continent_Mapping_Key,how='left', on='Country_Region')
-
-
 #drop countries with no data/match found
 country_aggregated_data = country_aggregated_data.dropna()
 country_aggregated_data = country_aggregated_data.drop(['wb_pop_Country_Region','wb_hosp_bed_Country_Region'],axis=1)
@@ -125,23 +125,18 @@ per_Mil_ratio = country_aggregated_data['Population'] / 1000000
 country_aggregated_data['cases_per_mil_people'] = country_aggregated_data['Confirmed'] / per_Mil_ratio
 #deaths per 1 million citizens
 country_aggregated_data['deaths_per_mil_people'] = country_aggregated_data['Deaths'] / per_Mil_ratio
-
 #recovery rate
 country_aggregated_data['Recovery_Rate'] = country_aggregated_data['Recovered'] / country_aggregated_data['Confirmed']
-
 
 #import total tests by country (worldometer.com)
 #tests per 1 million citizens
 
-
 #time series dataframe transformations
-
 time_series_cases = time_series_cases.rename(columns = {'Country/Region':'Country_Region'})
-
 pop_data_key = country_aggregated_data[['Country_Region','Population']]
 time_series_cases = pd.merge(time_series_cases,country_aggregated_data[['Country_Region','Population']],
                              on='Country_Region',how='left')
-
+#list of countries to aggregate time series info
 countries = time_series_cases['Country_Region'].unique()
 def cases_time_series_aggregator(days = 50):
     case_surge_data = pd.DataFrame(columns=['Country_Region', 'Date', 'Cases', 'Cases_per_Million',
@@ -176,14 +171,13 @@ def cases_time_series_aggregator(days = 50):
 #last 14 day surge data
 case_surge_time_series_data = cases_time_series_aggregator(days=14)
 
+#forecast by country
 
-
-#forecast total cases
 case_surge_time_series_data_rf = cases_time_series_aggregator(days=50)
 case_surge_time_series_data_rf = case_surge_time_series_data_rf[['Country_Region','Date','Cases']]
+#separate actual collected values from eventually imputed forecasted values
 case_surge_time_series_data_rf['Value_Type'] = 'Actual Value'
 countries = case_surge_time_series_data_rf['Country_Region'].unique()
-
 
 #country = 'US'
 def forecast_by_country(forecast_days=14):
@@ -225,49 +219,4 @@ def forecast_by_country(forecast_days=14):
 
 forecasted_cases = forecast_by_country(forecast_days=14)
 
-
 #forecasted_cases.to_csv('forecasted_cases.csv')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
