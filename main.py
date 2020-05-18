@@ -5,12 +5,25 @@
 #The data is then outputed as objects onto GCP storage (BigQuery) and read into corresponding visualization suites
 
 import pandas as pd
+import os as os
 from datetime import datetime, timedelta
 import world_bank_data as wb
 import numpy as np
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
 #pd.set_option('display.max_columns', None)
+
+country_agg_data_filePath = '/Users/mike/PycharmProjects/covid19/country_agg_data.csv'
+case_surge_time_series_data_filePath = '/Users/mike/PycharmProjects/covid19/case_surge_time_series_data.csv'
+forecasted_cases_filePath = '/Users/mike/PycharmProjects/covid19/forecasted_cases.csv'
+
+filePathNames = [country_agg_data_filePath,case_surge_time_series_data_filePath,forecasted_cases_filePath]
+
+for file in filePathNames:
+    if os.path.exists(file):
+        os.remove(file)
+    else:
+        print('file does not exist')
 
 #### Read in COVID-19 data via raw github extracts
 ####read the most recent data from today (minus 1 day to allow reports to catch up from previous day)
@@ -60,7 +73,8 @@ granular_data_united_states = daily_file_aggregator(daily_file_data, country_reg
 #note, some data can sometimes be added/reported late (i.e. China on 4/16/2020 reporting > 1200 deaths)
 
 
-###Getting data from API's (world bank API [world_bank_data] & twitter API [tweepy] and joining to COVID data
+###Getting data from API's (world bank API [world_bank_data]
+
 #grab datasets from the web (population, hospital beds per 1000 people)
 #and join them into our current covid-19 dataset as features
 #fetch population by country data sets (world bank data)
@@ -168,6 +182,8 @@ def cases_time_series_aggregator(days = 50):
         case_surge_data = case_surge_data.append(country_case_surge_data)
     return case_surge_data
 
+
+
 #last 14 day surge data
 case_surge_time_series_data = cases_time_series_aggregator(days=14)
 
@@ -219,4 +235,18 @@ def forecast_by_country(forecast_days=14):
 
 forecasted_cases = forecast_by_country(forecast_days=14)
 
-#forecasted_cases.to_csv('forecasted_cases.csv')
+forecasted_cases.to_csv('forecasted_cases.csv')
+country_aggregated_data.to_csv(('country_agg_data.csv'))
+case_surge_time_series_data.to_csv('case_surge_time_series_data.csv')
+#make random forest model
+
+
+#neural network model
+
+#record model results/error, and retrain models
+
+#build tables for tableau to illustrate model accuracy, retrained model improvement
+
+
+
+
