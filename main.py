@@ -1,7 +1,7 @@
 #Author: Mike Stack
-#Last Updated: 5/14/2020
+#Last Updated: 5/19/2020
 #this script ingests all of the data sources (*twitter data still needs to be added to process), performs necessary
-#transformations, and produces a 2nd degree polynomial forecast model for predicting the next 14 days of cases.
+#transformations, and produces a 3rd degree polynomial forecast model for predicting the next 14 days of cases.
 #The data is then outputed as objects onto GCP storage (BigQuery) and read into corresponding visualization suites
 
 import pandas as pd
@@ -211,7 +211,7 @@ def forecast_by_country(forecast_days=14):
         dates = dates.reshape(-1,1)
         forecast_dates = forecast_dates.reshape(-1,1)
         # Fitting Polynomial Regression to the dataset
-        poly_reg = PolynomialFeatures(degree=2)
+        poly_reg = PolynomialFeatures(degree=3)
         X_poly = poly_reg.fit_transform(dates)
         pol_reg = LinearRegression()
         pol_reg.fit(X_poly, cases)
