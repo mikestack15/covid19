@@ -1,5 +1,5 @@
 #Author: Mike Stack
-#Last Updated: 5/19/2020
+#Last Updated: 5/26/2020
 #this script ingests all of the data sources (*twitter data still needs to be added to process), performs necessary
 #transformations, and produces a 3rd degree polynomial forecast model for predicting the next 14 days of cases.
 #The data is then outputed as objects onto GCP storage (BigQuery) and read into corresponding visualization suites
@@ -13,10 +13,15 @@ from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
 #pd.set_option('display.max_columns', None)
 
+os.chdir('/Users/mike/PycharmProjects/covid19')
+
+
+#read in data sets
 country_agg_data_filePath = '/Users/mike/PycharmProjects/covid19/country_agg_data.csv'
 case_surge_time_series_data_filePath = '/Users/mike/PycharmProjects/covid19/case_surge_time_series_data.csv'
 forecasted_cases_filePath = '/Users/mike/PycharmProjects/covid19/forecasted_cases.csv'
 
+#create list of file path locations
 filePathNames = [country_agg_data_filePath,case_surge_time_series_data_filePath,forecasted_cases_filePath]
 
 for file in filePathNames:
@@ -238,7 +243,6 @@ forecasted_cases = forecast_by_country(forecast_days=14)
 forecasted_cases.to_csv('forecasted_cases.csv')
 country_aggregated_data.to_csv(('country_agg_data.csv'))
 case_surge_time_series_data.to_csv('case_surge_time_series_data.csv')
-#make random forest model
 
 
 #neural network model
