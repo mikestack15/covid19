@@ -1,5 +1,5 @@
 #Author: Mike Stack
-#Last Updated: 5/26/2020
+#Last Updated: 1/5/2021
 #this script ingests all of the data sources (*twitter data still needs to be added to process), performs necessary
 #transformations, and produces a 3rd degree polynomial forecast model for predicting the next 14 days of cases.
 #The data is then outputed as objects onto GCP storage (BigQuery) and read into corresponding visualization suites
@@ -238,19 +238,14 @@ def forecast_by_country(forecast_days=14):
         full_ts_data = full_ts_data.append(full_country_ts_data)
     return full_ts_data
 
-forecasted_cases = forecast_by_country(forecast_days=14)
+forecast_cases = forecast_by_country(forecast_days=14)
 
-forecasted_cases.to_csv('forecasted_cases.csv')
+forecast_cases.to_csv('forecast_cases.csv')
 country_aggregated_data.to_csv(('country_agg_data.csv'))
 case_surge_time_series_data.to_csv('case_surge_time_series_data.csv')
 
 
-#neural network model
-
-#record model results/error, and retrain models
-
-#build tables for tableau to illustrate model accuracy, retrained model improvement
-
+#objects intended for database insert (update) [forecast_cases, country_aggregated_data, case_surge_time_series_data]
 
 
 
