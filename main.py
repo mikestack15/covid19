@@ -13,13 +13,13 @@ from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
 #pd.set_option('display.max_columns', None)
 
-os.chdir('/Users/mike/PycharmProjects/covid19')
+os.chdir('C:/Users/16308/Desktop/skeleton_nf_repo/covid19')
 
 
 #read in data sets
-country_agg_data_filePath = '/Users/mike/PycharmProjects/covid19/country_agg_data.csv'
-case_surge_time_series_data_filePath = '/Users/mike/PycharmProjects/covid19/case_surge_time_series_data.csv'
-forecasted_cases_filePath = '/Users/mike/PycharmProjects/covid19/forecasted_cases.csv'
+country_agg_data_filePath = 'C:/Users/16308/Desktop/skeleton_nf_repo/covid19/country_agg_data.csv'
+case_surge_time_series_data_filePath = 'C:/Users/16308/Desktop/skeleton_nf_repo/covid19/case_surge_time_series_data.csv'
+forecasted_cases_filePath = 'C:/Users/16308/Desktop/skeleton_nf_repo/covid19/forecasted_cases.csv'
 
 #create list of file path locations
 filePathNames = [country_agg_data_filePath,case_surge_time_series_data_filePath,forecasted_cases_filePath]
@@ -199,7 +199,7 @@ case_surge_time_series_data_rf = case_surge_time_series_data_rf[['Country_Region
 #separate actual collected values from eventually imputed forecasted values
 case_surge_time_series_data_rf['Value_Type'] = 'Actual Value'
 countries = case_surge_time_series_data_rf['Country_Region'].unique()
-
+#
 #country = 'US'
 def forecast_by_country(forecast_days=14):
     full_ts_data = pd.DataFrame(columns=['Country_Region', 'Date', 'Cases', 'Value_Type'])
